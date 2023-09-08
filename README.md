@@ -1,14 +1,4 @@
-![crabber](https://i.imgur.com/DOqc5s8.png)
 A Twitter clone for crabby people.
-
-[![](https://img.shields.io/github/languages/code-size/crabber-net/crabber)](https://github.com/crabber-net/crabber)
-[![](https://img.shields.io/github/issues/crabber-net/crabber)](https://github.com/crabber-net/crabber/issues)
-[![](https://img.shields.io/website?url=https%3A%2F%2Fcrabber.net)](https://crabber.net)
-
----
-
-[Visit the official live site at crabber.net](https://crabber.net/)
----
 ## Screenshots
 ### Dark Mode
 [![screenshot of crabber.net dark mode](https://i.imgur.com/TvRZkRk.png)](https://crabber.net/)
