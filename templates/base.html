@@ -5,19 +5,19 @@
 <head>
     {% block head %}
     <meta charset="UTF-8">
-    <title>{% block title %}{% endblock %} | Crabber</title>
+    <title>{% block title %}{% endblock %} | Ravoom</title>
     <link rel="shortcut icon" href="https://cdn.crabber.net/img/favicon.svg" type="image/svg+xml">
     <link rel="alternate icon" href="https://cdn.crabber.net/img/favicon.png">
 
     <!-- Search Engine Metadata -->
-    <meta name="description" content="Crabber is a friendly open-source micro-blogging platform powered by Crabs.">
+    <meta name="description" content="Ravoom is a friendly open-source micro-blogging platform powered by Crabs.">
     <meta name="tags" content="crabber, twitter, micro-blogging, crabs, twitter alternative, open-source, social, social media, social network, mastodon, privacy">
     <meta name="author" content="{% block meta_author %}{% endblock %}">
 
     <!-- Facebook Embed Metadata -->
-    <meta property="og:site_name" content="Crabber">
-    <meta property="og:title" content="{{social_title or 'Join Crabber'}}">
-    <meta property="og:description" content="Crabber is a friendly open-source micro-blogging platform powered by Crabs.">
+    <meta property="og:site_name" content="Ravoom">
+    <meta property="og:title" content="{{social_title or 'Join Nimal'}}">
+    <meta property="og:description" content="Ravoom is a friendly open-source micro-blogging platform powered by Crabs.">
     {% if this_user %}
         {% set social_image = this_user.avatar %}
     {% elif molt %}
@@ -44,7 +44,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="https://cdn.crabber.net/img/icon.jpg">
     <link rel="apple-touch-startup-image" href="https://cdn.crabber.net/img/launch.png">
-    <meta name="apple-mobile-web-app-title" content="Crabber">
+    <meta name="apple-mobile-web-app-title" content="Ravoom">
 
     <!-- Required meta tags -->
     <meta charset="utf-8">
