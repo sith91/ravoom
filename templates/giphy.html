@@ -1,0 +1,26 @@
+{% import "macros.jinja" as macros %}
+
+{% if full_size_media %}
+<div class="large-molt-media-container mb-2 border border-dark rounded-media zindex-front" style="cursor: pointer;"
+    {{macros.expand_img()}}>
+    <div class="floating-media-tag">GIF</div>
+    <img class="w-100 rounded-media {{'nsfw-thumbnail' if nsfw}}" src="https://media.giphy.com/media/{{giphy_id}}/giphy.gif" alt="Attached image">
+    {% if nsfw %}
+        <strong class="nsfw-thumbnail-warning">
+            NSFW
+        </strong>
+    {% endif %}
+</div>
+{% else %}
+<div class="mini-molt-media-container mb-2 border border-dark rounded-media zindex-front" style="cursor: pointer;"
+    {{macros.expand_img()}}>
+    <div class="floating-media-tag">GIF</div>
+    <img src="https://media.giphy.com/media/{{giphy_id}}/giphy.gif"
+         class="mini-molt-media-img {{'nsfw-thumbnail' if nsfw}}" />
+    {% if nsfw %}
+        <strong class="nsfw-thumbnail-warning">
+            NSFW
+        </strong>
+    {% endif %}
+</div>
+{% endif %}

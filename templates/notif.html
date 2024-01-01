@@ -1,0 +1,131 @@
+{% import "macros.jinja" as macros %}
+
+{% set show_avatar = count == 1 and notif.type not in ('other', 'trophy', 'warning') %}
+
+<div class="notif mini-molt border-bottom border-dark p-2 d-flex flex-row absolute-container {{'' if notif.read else 'notif-unread'}}"
+    {% if notif.type == 'trophy' %}
+        onclick="location.href='/user/{{current_user.username}}?tab=trophies'"
+    {% elif notif.type == 'other' %}
+        onclick="location.href='{{notif.link}}'"
+    {% endif %}>
+    <div class="notif-age">
+        <span class="mini-molt-timestamp absolute-right mr-3"><a href="javascript:void(0)" title="{{notif.pretty_date}}">{{notif.pretty_age}}</a></span>
+    </div>
+    <div class="notif-indent ml-5 mr-2 w-100">
+        <div class="notif-icon-row">
+            {% if notif.type == "other" %}
+                <svg class="notif-icon notif-other" width="26" height="26" data-jam="bell-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#bell-f"></use>
+                </svg>
+            {% elif notif.type == "warning" %}
+                <svg class="notif-icon notif-warning" width="26" height="26" data-jam="triange-danger-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#triangle-danger-f"></use>
+                </svg>
+            {% elif notif.type == "trophy" %}
+
+                <svg class="notif-icon notif-trophy" width="26" height="26" data-jam="medal-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#medal-f"></use>
+                </svg>
+            {% elif notif.type == "mention" %}
+
+                <svg class="notif-icon notif-mention" width="26" height="26" data-jam="message-writing-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#message-writing-f"></use>
+                </svg>
+            {% elif notif.type == "like" %}
+
+                <svg class="notif-icon notif-like" width="26" height="26" data-jam="heart-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#heart-f"></use>
+                </svg>
+            {% elif notif.type == "quote" %}
+
+                <svg class="notif-icon notif-remolt" width="26" height="26" data-jam="message-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#message-f"></use>
+                </svg>
+            {% elif notif.type == "reply" %}
+
+                <svg class="notif-icon notif-reply" width="26" height="26" data-jam="message-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#message-f"></use>
+                </svg>
+            {% elif notif.type == "remolt" %}
+
+                <svg class="notif-icon notif-remolt" width="26" height="26" data-jam="repeat">
+                    <use href="{{sprite_url}}?version={{server_start}}#repeat"></use>
+                </svg>
+            {% elif notif.type == "follow" %}
+
+                <svg class="notif-icon notif-follow" width="26" height="26" data-jam="plus">
+                    <use href="{{sprite_url}}?version={{server_start}}#plus"></use>
+                </svg>
+            {% elif notif.type == "unfollow" %}
+
+                <svg class="notif-icon notif-unfollow" width="26" height="26" data-jam="skull-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#skull-f"></use>
+                </svg>
+            {% endif %}
+            {% if show_avatar %}
+                <a href="/user/{{notif.sender.username}}" class="zindex-front">
+                    <div class="rounded-circle px26 notif-unfollow profile-picture" style="background-image: url('{{notif.sender.avatar}}');"></div>
+                </a>
+            {% endif %}
+        </div>
+        <div class="notif-header-row {{'mt-2' if show_avatar else 'mt-1'}}">
+            {% if notif.type == "other" %}
+                {{notif.content}}
+            {% elif notif.type == "warning" %}
+                <strong class="text-warning">
+                    You have recieved the following warning from a moderator:
+                </strong>
+                <em class="moderator-warning">
+                    {{notif.content}}
+                </em>
+            {% elif notif.type == "trophy" %}
+                You earned the trophy: <strong>{{notif.content}}</strong>!
+            {% elif notif.type == "mention" %}
+                <strong>
+                    <a href="/user/{{notif.sender.username}}" class="text-light">{{notif.sender.display_name}}
+                        {% if notif.sender.verified %}
+                        <a title="This user is verified">{{macros.verified(17)}}</a>
+                        {% endif %}
+                    </a>
+                </strong>
+                mentioned you in a Molt
+
+                <div class="mt-2">
+                    {% with molt=notif.molt %}
+                        {% include "tiny_molt.html" %}
+                    {% endwith %}
+                </div>
+            {% else %}
+                <strong>
+                    {% if count > 1 %}
+                        {{count}} crabs
+                    {% else %}
+                        <a href="/user/{{notif.sender.username}}" class="text-light">{{notif.sender.display_name}}
+                            {% if notif.sender.verified %}
+                            <a title="This user is verified">{{macros.verified(17)}}</a>
+                            {% endif %}
+                        </a>
+                    {% endif %}
+                </strong>
+                {% if notif.type == "follow" %}
+                    followed you
+                {% elif notif.type =="unfollow" %}
+                    un-followed you
+                {% else %}
+                    {% if notif.type == "like" %} liked
+                    {% elif notif.type == "quote" %} quoted
+                    {% elif notif.type == "reply" %} replied to
+                    {% elif notif.type == "remolt" %} remolted
+                    {% endif%}
+                    your Molt
+
+                    <div class="mt-2">
+                        {% with molt=notif.molt %}
+                            {% include "tiny_molt.html" %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>

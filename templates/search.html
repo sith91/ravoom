@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block ext_head %}
+    <!-- Preload loading indicator so you never see alt-text -->
+    <link rel="preload" as="image" href="http://192.168.1.5:8888/static/img/content-loading-indicator.gif">
+{% endblock %}
+{% block title %}
+    {% include 'search-ajax-title.html' %}
+{% endblock %}
+{% block heading %}
+    {% include 'search-ajax-heading.html' %}
+{% endblock %}
+{% block body %}
+    {% include 'search-ajax-body.html' %}
+{% endblock %}

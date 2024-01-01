@@ -1,0 +1,578 @@
+{% import "macros.jinja" as macros %}
+
+<script async>
+    $(function () {
+        // Enable tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Load Last.fm data
+        $("#lastfm").each(function(index, elem) {
+            var username = $(elem).data("lastfm-username");
+            getNowPlaying(username);
+        })
+    })
+</script>
+
+<!-- Profile bio box -->
+<div class="profile-box border-bottom border-dark">
+    <div class="profile-box-banner" {{macros.expand_img() if current_page != "own-profile" else ""}}>
+        {% if current_page == "own-profile" %}
+            <div class="banner-edit-button clickable w-100 h-100 absolute-top" onclick="toggleModal('#banner_modal');">
+
+                <svg class="text-light" width="46" height="46" data-jam="camera-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#camera-f"></use>
+                </svg>
+            </div>
+        {% endif %}
+        <img class="profile-banner" src="{{this_user.banner}}" />
+    </div>
+    <div class="profile-box-bio px-2 pt-2">
+        <div class="profile-box-avatar d-block w-25 force-square profile-box-shadow rounded-circle" {{macros.expand_img() if current_page != "own-profile" else ""}}>
+            {% if current_page == "own-profile" %}
+            <div class="avatar-edit-button clickable w-100 h-100 zindex-front" onclick="toggleModal('#avatar_modal');">
+
+                <svg class="text-light" width="46" height="46" data-jam="camera-f">
+                    <use href="{{sprite_url}}?version={{server_start}}#camera-f"></use>
+                </svg>
+            </div>
+            {% endif %}
+            <div class="rounded-circle profile-picture shadow-expand">
+                <img src="{{this_user.avatar}}"
+                    style="border-radius: 100%;">
+            </div>
+        </div>
+        <div class="profile-box-follow-row d-flex flex-row justify-content-end">
+            <!-- Display correct follow button if page is not current user -->
+            {% if not current_user %}
+                <button type="submit" class="btn btn-primary rounded-pill" onclick="location.href='/login'">
+                    <strong>Log in to follow users</strong>
+                </button>
+            {% elif this_user != current_user %}
+                <form method="POST">
+                    <input type="hidden" name="target_user" value="{{this_user.id}}">
+
+                    <!-- Block/Unblock button -->
+                    <div class="d-inline-block block-section">
+                        {% if not current_user in this_user.blockers%}
+                            <button name="user_action" value="block" type="submit" class="btn btn-outline-secondary rounded-pill block-btn"><strong>Block</strong></button>
+                        {% else %}
+                            <button name="user_action" value="unblock" type="submit" class="btn btn-secondary rounded-pill unblock-btn">
+                                <strong class="default-text">Blocked</strong>
+                                <strong class="hover-text">Unblock</strong>
+                            </button>
+                        {% endif %}
+                    </div>
+                    <!-- Follow/Unfollow button -->
+                    <div class="d-inline-block ml-1 follow-section">
+                        {% if not current_user in this_user.blockers %}
+                            {% if not current_user in this_user.followers %}
+                                <button name="user_action" value="follow" type="submit" class="btn btn-outline-primary rounded-pill follow-btn">
+                                    <strong>
+                                    {% if spooky_mode %}
+                                        Haunt
+                                    {% else %}
+                                        Follow
+                                    {% endif %}
+                                    </strong>
+                                </button>
+                            {% else %}
+                                <button name="user_action" value="unfollow" type="submit" class="btn btn-primary rounded-pill unfollow-btn">
+                                {% if spooky_mode %}
+                                    <strong class="default-text">Haunting</strong>
+                                    <strong class="hover-text">Unhaunt</strong>
+                                {% else %}
+                                    <strong class="default-text">Following</strong>
+                                    <strong class="hover-text">Unfollow</strong>
+                                {% endif %}
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </form>
+            {% else %}
+            <form method="POST" onsubmit="return savedescription()">
+                <!-- Fixed values -->
+                <input type="hidden" name="user_action" value="update_description">
+                <input type="hidden" name="user_id" value="{{this_user.id}}">
+                <!-- Dynamic values -->
+                <input type="hidden" name="display_name" value="">
+                <input type="hidden" name="description" value="">
+                <button type="submit" id="save-button" class="btn btn-primary rounded-pill hidden"><strong>Save changes</strong></button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="profile-box-names mt-2 mt-md-4 mt-lg-2">
+            <strong class="profile-box-display-name"
+                {% if current_page == "own-profile" %}
+                    onkeypress="return (this.innerText.length <= 32)" contentEditable
+                    onclick="showEditor('name')"
+                {% endif %}>
+                {{this_user.display_name}}</strong>
+            {% if this_user.verified %}
+            <a title="This user is verified">
+                {{macros.verified(18)}}
+            </a>
+            {% endif %}
+            <p class="text-muted mb-1">@{{this_user.username}}
+                {% if current_user in this_user.following %}
+                    <small class="follows-you">
+                    {% if spooky_mode %}
+                        Haunts You
+                    {% else %}
+                        Follows you
+                    {% endif %}
+                    </small>
+                {% endif %}
+            </p>
+        </div>
+        <div class="profile-box-description w-100">
+            <div id="rich-description"
+                 {% if current_page == 'own-profile' %}
+                 class="editable-description"
+                 onclick="showEditor('description');"
+                 {% endif %}
+            >
+                {{this_user.rich_description|safe}}
+            </div>
+            {% if current_page == 'own-profile' %}
+            <div class="hidden" id="editable-description">
+                <textarea id="description-editor" rows=3 maxlength={{limits['description']}}>{{this_user.description}}</textarea>
+            </div>
+        {% endif %}
+        </div>
+        <div class="profile-box-join-date text-muted mt-1">
+            <!-- Location -->
+            {% if this_user.location %}
+            <div class="d-inline-block mr-2" id="user-location">
+
+                <svg class="mini-molt-action-icon pb-1" width="16" height="20" data-jam="map-marker">
+                    <use href="{{sprite_url}}?version={{server_start}}#map-marker"></use>
+                </svg>
+                {{this_user.location}}
+            </div>
+            {% endif %}
+
+            <!-- Website -->
+            {% if this_user.website %}
+            <div class="d-inline-block mr-2" id="user-website">
+
+                <svg class="mini-molt-action-icon pb-1" width="16" height="20" data-jam="map-marker">
+                    <use href="{{sprite_url}}?version={{server_start}}#link"></use>
+                </svg>
+                <a class="text-primary" href="{{this_user.website}}" target="_blank" rel="nofollow">{{this_user.website|pretty_url}}</a>
+            </div>
+            {% endif %}
+
+            <!-- Crabber Birthday -->
+            <div class="d-inline-block mr-2" id="join-date">
+                <svg class="mini-molt-action-icon pb-1" width="16" height="20" data-jam="calendar">
+                    <use href="{{sprite_url}}?version={{server_start}}#calendar"></use>
+                </svg>
+                Joined {{localize(this_user.register_time).strftime('%B %Y')}}
+            </div>
+
+            <!-- Last.fm -->
+            {% if this_user.lastfm %}
+                <div class="d-inline-block mr-2" id="lastfm" data-lastfm-username="{{this_user.lastfm}}">
+                    <img class="lastfm-logo" class="valign-bottom" src="https://cdn.crabber.net/img/lastfm.svg" alt="Last.fm logo" width="16">
+                    <!-- Now Playing -->
+                    <a href="https://last.fm/user/{{this_user.lastfm}}" id="lastfm-now-playing" class="text-muted d-none" target="_blank" rel="nofollow">
+                        <span id="lastfm-status">now playing</span>
+                        <strong class="italic" id="lastfm-artist"><em></em></strong> &mdash; <strong id="lastfm-track"><em></em></strong>
+                    </a>
+                    <!-- Loading -->
+                    <span class="text-faded lastfm-loading"><em>loading Last.fm...</em></span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="profile-box-following mt-1">
+            <a class="text-inherit" href="/user/{{this_user.username}}/following">
+            <div class="d-inline mr-2"><strong>{{this_user.following_count}}</strong>
+                <span class="text-muted">Following</span></div></a>
+            <a class="text-inherit" href="/user/{{this_user.username}}/followers">
+            <div class="d-inline mr-2"><strong>{{this_user.follower_count}}</strong>
+                <span class="text-muted">Follower{{this_user.follower_count | pluralize}}</span></a></div>
+
+            <!-- "Followers you know" section -->
+            {% if current_user %}
+                {% if current_user != this_user %}
+                    <div class="following-mutuals text-muted mt-2">
+                        <a class="text-muted" href="/user/{{this_user.username}}/followers_you_know">
+                            {% with mutuals=current_user.get_mutuals_for(this_user).all() %}
+                                {% if mutuals %}
+                                    {% with featured_mutuals=mutuals[:3], other_mutuals=mutuals[3:] %}
+                                        <div class="featured-mutuals mr-2">
+                                            {% for mutual in featured_mutuals %}
+                                            <div class="featured-mutual-avatar"
+                                                 style="background-image: url('{{mutual.avatar}}');"
+                                                 src="{{this_user.avatar}}">
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <span>Followed by</span>
+                                        {% for mutual in featured_mutuals %}
+                                            <span>
+                                                {{mutual.display_name}}{{',' if not loop.last or other_mutuals}}
+                                            <span>
+                                        {% endfor %}
+                                        {% if other_mutuals %}
+                                            <span>
+                                                and {{other_mutuals|length}} other{{other_mutuals|pluralize}} you follow.
+                                            </span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endwith %}
+                        </a>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- SHELL Section -->
+        <div class="shell p-1 mt-1 mb-0 jumbotron" id="shell-dropdown">
+            <!-- Shell toggle -->
+            <button id="shell-toggle" class="btn btn-trans pl-0 w-100 text-left">
+
+                <svg class="shell-toggle-chevron" width="24" height="24" data-jam="chevron-right">
+                    <use href="{{sprite_url}}?version={{server_start}}#chevron-right"></use>
+                </svg>
+                Full bio
+            </button>
+
+            <div id="shell-contents" class="shell-collapsed text-light-darker cool-scroll">
+                {% if this_user.theme_song %}
+                    <h5>Theme Song</h5>
+                    <div class="rounded neue-card theme-song-container mb-3">
+                        {% with src = this_user.theme_song %}
+                            {% include 'crab-midi.html' %}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+
+                <h5>Fun facts</h5>
+                <div class="rounded neue-card p-3 bio-fields">
+                    <table id="user-info">
+                        {% set bio_names = {'age': 'Age',
+                                            'pronouns': 'Pronouns',
+                                            'quote': 'Quote',
+                                            'jam': 'My jam',
+                                            'obsession': 'Latest obsession',
+                                            'remember': 'Remember when',
+                                            'emoji': 'Favorite emoji'} %}
+                        {% for key, value in this_user.bio.items() %}
+                            {% if value and not key.startswith('social') %}
+                                <tr>
+                                    <th>{{bio_names[key]}}</th>
+                                    <td class="bio-field-value">
+                                        {% if key == 'age' %}
+                                        {{value | format_dob}}
+                                        {% else %}
+                                        {{value}}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% else %}
+                          <p class="text-muted">This user hasn't filled out their bio 😦</p>
+                        {% endfor %}
+                    </table>
+                </div>
+
+                {% if 'social-' in ','.join(this_user.bio.keys()) %}
+                <h5 class="mt-3">Social links</h5>
+                <div class="rounded neue-card p-3 bio-fields">
+                    <table id="user-social-links">
+                        {% set bio_names = {'social-discord': 'Discord',
+                                            'social-github': 'GitHub',
+                                            'social-spacehey': 'SpaceHey',
+                                            'social-spotify': 'Spotify',
+                                            'social-twitch': 'Twitch',
+                                            'social-youtube': 'YouTube',
+                                            'social-steam': 'Steam',
+                                            'social-xbox': 'Xbox',
+                                            'social-psn': 'PSN',
+                                            'social-nso': 'Nintendo',
+                                           }
+                        %}
+                            {% for key, name in bio_names.items() %}
+                                {% set value = this_user.bio.get(key) %}
+                                {% if value %}
+                                    <tr>
+                                        <th>{{name}}</th>
+                                        <td class="bio-field-value">
+                                            {{value | social_link(key) | safe}}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                    </table>
+                </div>
+                {% endif %}
+
+                <h5 class="mt-3">Stats</h5>
+                <div class="rounded neue-card p-3">
+                    <ul class="shell-stats pl-2 m-0">
+                        <!-- Member duration -->
+                        <li>Member for <strong class="text-primary">{{this_user.days_active | commafy}}</strong> days</li>
+                        <!-- Molts published -->
+                        <li><strong class="text-primary">{{this_user.molt_count | commafy}}</strong> Molt{{this_user.molts_count | pluralize}} published</li>
+                        <!-- Molts liked -->
+                        <li>Liked <strong class="text-primary">{{this_user.like_count | commafy}}</strong> Molt{{this_user.like_count | pluralize}}</li>
+                        {% if this_user.lastfm %}
+                            <!-- Scrobble count -->
+                            <li class="font-0">
+                                <!-- Loading -->
+                                <span class="font-small text-faded lastfm-loading"><em>loading Last.fm...</em></span>
+                                <span class="d-none font-small" id="lastfm-scrobbles">
+                                    Scrobbled <strong id="lastfm-scrobble-count" class="text-primary"></strong> times on <a target="_blank" href="https://last.fm/user/{{this_user.lastfm}}" class="text-primary">Last.fm</a>
+                                </span>
+                            </li>
+                            <!-- Loved tracks count -->
+                            <li class="font-0">
+                                <!-- Loading -->
+                                <span class="font-small text-faded" id="loved-loading"><em>loading Last.fm...</em></span>
+                                <span class="d-none font-small" id="lastfm-loved">
+                                    <strong id="lastfm-loved-count" class="text-primary"></strong> loved tracks on <a target="_blank" href="https://last.fm/user/{{this_user.lastfm}}" class="text-primary">Last.fm</a>
+                                </span>
+                            </li>
+                        {% endif %}
+                        <li><strong class="text-primary">{{this_user.trophy_count}}</strong> {{"trophy" if this_user.trophy_count == 1 else "trophies"}}</li>
+                        <li><strong class="d-inline-block text-primary">
+                            {% if this_user.following_count > 0 %}
+                                {{"%.1f"|format(this_user.follower_count / this_user.following_count)}}
+                            {% else %}
+
+                            <svg class="" width="16" height="16" data-jam="infinite">
+                                <use href="{{sprite_url}}?version={{server_start}}#infinite"></use>
+                            </svg>
+                            {% endif %}
+                        </strong> follower/following ratio</li>
+                        <li>Referred
+                            <strong class="text-primary">
+                                {{this_user.referral_code.uses}}
+                            </strong>
+                            user{{this_user.referral_code.uses | pluralize}} to Ravoom!
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Spacer -->
+                <div class="d-inline-block w-100 my-1 text-muted text-molt text-center"></div>
+
+            </div>
+
+            <script async>
+                var shellContents = $("#shell-contents");
+                $("#shell-toggle").click(function () {
+                    shellContents.toggleClass("shell-collapsed");
+                    $(".shell-toggle-chevron").toggleClass("rotate-90");
+                })
+            </script>
+        </div>
+
+        <!-- Tab switcher -->
+        <div class="row mx-0">
+            <div id="molts-btn" class="profile-box-category mt-2 col {{ 'active' if current_tab == 'molts' else '' }}" onclick="switchTo('molts');">
+                <div class="py-2"><strong class="d-inline-block w-100 text-center">Ravooms</strong></div>
+            </div>
+            <div id="replies-btn" class="profile-box-category mt-2 col {{ 'active' if current_tab == 'replies' else '' }}" onclick="switchTo('replies');">
+                <div class="py-2"><strong class="d-inline-block w-100 text-center">Replies</strong></div>
+            </div>
+            <div id="likes-btn" class="profile-box-category mt-2 col {{ 'active' if current_tab == 'likes' else '' }}" onclick="switchTo('likes');">
+                <div class="py-2"><strong class="d-inline-block w-100 text-center">Likes</strong></div>
+            </div>
+            <div id="trophies-btn" class="profile-box-category mt-2 col {{ 'active' if current_tab == 'trophies' else '' }}" onclick="switchTo('trophies');">
+                <div class="py-2"><strong class="d-inline-block w-100 text-center">Trophies</strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- All molts live here! -->
+<div id="molts" class="{{ 'd-none' if current_tab != 'molts' else '' }}">
+    {% with section='molts', page=m_page_n, autoload=(current_tab == 'molts') %}
+        {% include 'generic-ajax-loader.html' %}
+    {% endwith %}
+</div>
+
+<!-- All replies live here! -->
+<div id="replies" class="{{ 'd-none' if current_tab != 'replies' else '' }}">
+    {% with section='replies', page=r_page_n, autoload=(current_tab == 'replies') %}
+        {% include 'generic-ajax-loader.html' %}
+    {% endwith %}
+</div>
+
+<!-- All likes live here! -->
+<div id="likes" class="{{ 'd-none' if current_tab != 'likes' else ''}}">
+    {% with section='likes', page=r_page_n, autoload=(current_tab == 'likes') %}
+        {% include 'generic-ajax-loader.html' %}
+    {% endwith %}
+</div>
+
+<!-- All trophies live here! -->
+<div id="trophies" class="{{ 'd-none' if current_tab != 'trophies' else ''}}">
+    <div class="d-flex mt-4 flex-wrap justify-content-center">
+        {% for trophy_case in this_user.trophies %}
+            {% with trophy = trophy_case.trophy %}
+                {% include "trophy.html" %}
+            {% endwith %}
+        {% else %}
+            <div class="d-inline-block w-100 p-5 text-muted text-molt text-center">This user hasn't earned any trophies</div>
+        {% endfor %}
+        <div class="trophy-space-filler m-2" style="height: 0; width: 150px;"></div>
+        <div class="trophy-space-filler m-2" style="height: 0; width: 150px;"></div>
+    </div>
+</div>
+
+<!-- Spacer -->
+<div class="d-inline-block w-100 p-5 my-5 text-muted text-molt text-center"></div>
+
+<!-- Avatar change popup -->
+<div class="modal fade" id="avatar_modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content bg-dark">
+            <div class="modal-header py-2 border-dark">
+                <button type="button" class="close text-primary" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <strong>Upload new avatar</strong>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Recommended size: 500x500</p>
+                <!-- Avatar upload form -->
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="user_action" value="change_avatar">
+                    <div class="mb-2 input-group cool-input">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="avatar-description">Alt Text</label>
+                        </div>
+                        <input type="text" name="img_description"
+                               class="form-control" id="avatar-description"
+                               placeholder="image description (optional)"
+                               autocomplete="off">
+                    </div>
+                    <div class="d-flex flex-row justify-content-between">
+                        <div class="d-inline-block profile-file-select">
+                            <input name="file" class="text-muted file-input" type="file" accept="image/x-png,image/jpeg, image/png" required>
+                        </div>
+                        <div class="d-inline-block">
+                            <button type="submit" onclick="$(this).children().text('Posting...')" class="btn btn-primary rounded-pill mini-btn"><strong>Upload</strong></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Banner change popup -->
+<div class="modal fade" id="banner_modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content bg-dark">
+            <div class="modal-header py-2 border-dark">
+                <button type="button" class="close text-primary" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <strong>Upload new banner</strong>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Recommended size: 1500x500</p>
+                <!-- Banner upload form -->
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="user_action" value="change_banner">
+                    <div class="mb-2 input-group cool-input">
+                        <div class="input-group-prepend">
+                            <label class="input-group-text" for="avatar-description">Alt Text</label>
+                        </div>
+                        <input type="text" name="img_description"
+                               class="form-control" id="avatar-description"
+                               placeholder="image description (optional)"
+                               autocomplete="off">
+                    </div>
+                    <div class="d-flex flex-row justify-content-between">
+                        <div class="d-inline-block profile-file-select">
+                            <input name="file" class="text-muted file-input" type="file" accept="image/x-png,image/jpeg, image/png" required>
+                        </div>
+                        <div class="d-inline-block">
+                            <button type="submit" onclick="$(this).children().text('Posting...')" class="btn btn-primary rounded-pill mini-btn"><strong>Upload</strong></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script async>
+    // Molt/Like tab controller
+    function switchTo(tab) {
+        var tabs = ['molts', 'replies', 'likes', 'trophies']
+        // Reset all buttons to inactive and tabs to hidden
+        tabs.forEach(tabName => {
+            $(`#${tabName}-btn`).removeClass("active");
+            $(`#${tabName}`).addClass("d-none");
+
+        });
+
+        // Switch active button
+        $(`#${tab}-btn`).addClass("active");
+        // Switch tab
+        $(`#${tab}`).removeClass("d-none");
+        // Load content if necessary
+        let loadStatus = $(`#${tab} meta[name=${tab}-load-status]`).attr('content');
+        if (loadStatus == 'false') {
+            let loadFunc = $(`#${tab} meta[name=${tab}-load-func]`).attr('content');
+            window[loadFunc]();
+        }
+
+        // Update tab parameter in location/history
+        let newLocation = new URL(window.location);
+        newLocation.searchParams.set('tab', tab);
+        window.history.pushState({}, '', newLocation.href);
+    }
+
+    function showEditor(focus) {
+        $('strong.profile-box-display-name').addClass('active');
+        $('div#rich-description.editable-description').addClass('hidden');
+        $('div#editable-description').removeClass('hidden');
+        $('#save-button').removeClass('hidden');
+
+        if (focus != undefined) {
+            if (focus == 'description') {
+                let descriptionEditor = document.getElementById('description-editor');
+                descriptionEditor.focus();
+                descriptionEditor.setSelectionRange(
+                    descriptionEditor.value.length,
+                    descriptionEditor.value.length
+                );
+            }
+            else if (focus == 'name') {
+                let nameEditor = $('.profile-box-display-name')[0];
+                nameEditor.focus();
+            }
+        }
+    }
+
+    function savedescription() {
+        let displayName = $('.profile-box-display-name')[0].innerText.trim();
+        let description = document.getElementById('description-editor').value.trim();
+
+        // Verify lengths
+        if (displayName.length < 1) {
+            alert('Display name cannot be empty.')
+            return false;
+        }
+        if (description.length < 1) {
+            alert('Description cannot be empty.')
+            return false;
+        }
+
+        // Commit values to hidden inputs
+        $('[name="display_name"]').val(displayName)
+        $('[name="description"]').val(description)
+
+        // Submit form
+        return true;
+    }
+</script>
