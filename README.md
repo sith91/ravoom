@@ -113,3 +113,12 @@ molt = jake.get_molts()[0]
 molt.like()
 molt.reply('Wow, you\'re so cool!')
 ```
+
+Features to be inlcude
+
+Allow visitors to see and search posts without singing up - e.g- Like in Reddit
+Allow users to post short audio and vedio clips
+Include a rich text editor
+Create APIs for for POST and GET and Search audio and vedio clips
+Include google and MSAN login
+
