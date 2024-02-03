@@ -126,8 +126,53 @@ def terms_of_service():
             "plaintext.html", title="Terms of Service", content=contents
         )
 
-
 @app.route("/", methods=("GET", "POST"))
+def index():
+    # Handle forms and redirect to clear post data on browser
+    if request.method == "POST":
+        return utils.common_molt_actions()
+
+    # Display page
+    page_n = request.args.get("p", 1, type=int)
+
+    if request.args.get("ajax_json"):
+        blocks = {}
+        for block in ("title", "heading", "body"):
+            blocks[block] = render_template(
+                f"timeline-ajax-{block}.html",
+                current_page="home",
+                page_n=page_n,
+            )
+        return jsonify(blocks)
+    else:
+        if request.args.get("ajax_content"):
+            # Pagination logic
+            molts = models.Molt.query.order_by(models.Molt.timestamp.desc()).paginate(
+                page_n, config.MOLTS_PER_PAGE, False
+            )
+
+            return render_template(
+                "timeline-content.html",
+                current_page="home",
+                page_n=page_n,
+                molts=molts,
+            )
+        else:
+            # Fetch featured post and user for the welcome page
+            featured_molt = models.Molt.query.filter_by(id=config.FEATURED_MOLT_ID).first()
+            featured_user = models.Crab.query.filter_by(
+                username=config.FEATURED_CRAB_USERNAME
+            ).first()
+            return render_template(
+                "welcome.html",
+                featured_molt=featured_molt,
+                featured_user=featured_user,
+                fullwidth=True,
+                current_page="welcome",
+                hide_sidebar=True,
+            )
+
+"""@app.route("/", methods=("GET", "POST"))
 def index():
     current_user = utils.get_current_user()
 
@@ -179,7 +224,7 @@ def index():
             current_page="welcome",
             hide_sidebar=True,
         )
-
+"""
 
 @app.route("/wild/", methods=("GET", "POST"))
 def wild_west():

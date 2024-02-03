@@ -114,7 +114,7 @@ molt.like()
 molt.reply('Wow, you\'re so cool!')
 ```
 
-###Features to be inlcude
+### Features to be inlcude
 
 1. Allow visitors to see and search posts without singing up - e.g- Like in Reddit
 2. Allow users to post short audio and vedio clips
