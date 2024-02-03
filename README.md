@@ -114,11 +114,13 @@ molt.like()
 molt.reply('Wow, you\'re so cool!')
 ```
 
-Features to be inlcude
+###Features to be inlcude
 
-Allow visitors to see and search posts without singing up - e.g- Like in Reddit
-Allow users to post short audio and vedio clips
-Include a rich text editor
-Create APIs for for POST and GET and Search audio and vedio clips
-Include google and MSAN login
+1. Allow visitors to see and search posts without singing up - e.g- Like in Reddit
+2. Allow users to post short audio and vedio clips
+3. Include a rich text editor
+4. Create APIs for for POST and GET and Search audio and vedio clips
+5. Include google and MSAN login
+6. Create the mobile app for IOS and Andriod
+7. Create the Meta Quest 3 App
 
